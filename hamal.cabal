@@ -1,0 +1,64 @@
+cabal-version: 3.12
+name: hamal
+version: 0.1.0.0
+license: BSD-3-Clause
+license-file: LICENSE
+author: atree4728
+maintainer: atree.public@gmail.com
+category: Language
+build-type: Simple
+extra-doc-files: README.md
+
+common defaults
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-export-lists
+    -Wmissing-home-modules
+    -Wpartial-fields
+    -Wredundant-constraints
+    -Wunused-packages
+
+  default-extensions:
+    BlockArguments
+    DuplicateRecordFields
+    MultiWayIf
+    NoFieldSelectors
+    OverloadedRecordDot
+    RecordWildCards
+    StrictData
+    ViewPatterns
+
+  mixins:
+    base hiding (Prelude),
+    relude,
+    relude (Relude as Prelude),
+
+  build-depends:
+    base,
+    relude,
+
+  default-language: GHC2024
+
+library
+  import: defaults
+  -- cabal-gild: discover src
+  exposed-modules:
+  build-depends:
+  hs-source-dirs: src
+
+executable hamal
+  import: defaults
+  main-is: Main.hs
+  build-depends: hamal
+  hs-source-dirs: app
+
+test-suite hamal-test
+  import: defaults
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  build-depends: hamal
