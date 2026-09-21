@@ -65,6 +65,7 @@ tokens :-
 <0> "<-"    { tok TLeftArrow }
 
 <0> @id     { tokIdent }
+<0> $digit+ { tokInt }
 
 {
 data AlexUserState = AlexUserState
@@ -141,6 +142,18 @@ tokIdent inp@(_, _, str, _) len =
   pure
     SpannedToken
       { stToken = TIdent $ BS.take len str
+      , stSpan = mkSpan inp len
+      }
+
+tokInt :: AlexAction SpannedToken
+tokInt inp@(_, _, str, _) len = do
+  let digits = BS.take len str
+  int <- case BS.readInteger digits of
+    Just (int, _) -> pure int
+    Nothing -> alexError $ "Error: malformed integer literal " <> BS.unpack digits
+  pure
+    SpannedToken
+      { stToken = TInt int
       , stSpan = mkSpan inp len
       }
 }
