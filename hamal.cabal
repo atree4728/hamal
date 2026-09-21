@@ -28,6 +28,7 @@ common defaults
     MultiWayIf
     NoFieldSelectors
     OverloadedRecordDot
+    OverloadedStrings
     RecordWildCards
     StrictData
     ViewPatterns
@@ -47,7 +48,13 @@ library
   import: defaults
   -- cabal-gild: discover src
   exposed-modules:
+    Frontend.Lexer
+
+  build-tool-depends: alex:alex
   build-depends:
+    array,
+    bytestring,
+
   hs-source-dirs: src
 
 executable hamal
