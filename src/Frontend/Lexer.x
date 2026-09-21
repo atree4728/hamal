@@ -28,6 +28,13 @@ tokens :-
 
 <0> $white+    ;
 
+<0>       "(*" { nestComment `andBegin` comment }
+<0>       "*)" { \_ _ -> alexError "Error: unexpected closing comment" }
+<comment> "(*" { nestComment }
+<comment> "*)" { unnestComment }
+<comment> .    ;
+<comment> \n   ;
+
 <0> let     { tok TLet }
 <0> rec     { tok TRec }
 <0> in      { tok TIn }
@@ -68,13 +75,31 @@ tokens :-
 <0> $digit+ { tokInt }
 
 {
-data AlexUserState = AlexUserState
+data AlexUserState = AlexUserState {nestLevel :: Int}
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState
+alexInitUserState = AlexUserState {nestLevel = 0}
+
+modifyNestLevel :: (Int -> Int) -> Alex Int
+modifyNestLevel f = do
+  ust <- alexGetUserState
+  let level = f ust.nestLevel
+  alexSetUserState ust {nestLevel = level}
+  pure level
+
+nestComment, unnestComment :: AlexAction SpannedToken
+nestComment input len = do
+  modifyNestLevel (+ 1)
+  skip input len
+unnestComment input len = do
+  level <- modifyNestLevel (subtract 1)
+  when (level == 0) $ alexSetStartCode 0
+  skip input len
 
 alexEOF :: Alex SpannedToken
 alexEOF = do
+  startCode <- alexGetStartCode
+  when (startCode == comment) $ alexError "Error: unclosed comment"
   (pos, _, _, _) <- alexGetInput
   pure $ SpannedToken TEof (Span pos pos)
 
@@ -130,23 +155,23 @@ mkSpan (start, _, str, _) len = Span {start, stop}
     stop = BS.foldl' alexMove start $ BS.take len str
 
 tok :: Token -> AlexAction SpannedToken
-tok ctor inp len =
+tok stToken input len =
   pure
     SpannedToken
-      { stToken = ctor
-      , stSpan = mkSpan inp len
+      { stToken
+      , stSpan = mkSpan input len
       }
 
 tokIdent :: AlexAction SpannedToken
-tokIdent inp@(_, _, str, _) len =
+tokIdent input@(_, _, str, _) len =
   pure
     SpannedToken
       { stToken = TIdent $ BS.take len str
-      , stSpan = mkSpan inp len
+      , stSpan = mkSpan input len
       }
 
 tokInt :: AlexAction SpannedToken
-tokInt inp@(_, _, str, _) len = do
+tokInt input@(_, _, str, _) len = do
   let digits = BS.take len str
   int <- case BS.readInteger digits of
     Just (int, _) -> pure int
@@ -154,6 +179,6 @@ tokInt inp@(_, _, str, _) len = do
   pure
     SpannedToken
       { stToken = TInt int
-      , stSpan = mkSpan inp len
+      , stSpan = mkSpan input len
       }
 }

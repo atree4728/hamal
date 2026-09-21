@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Data.ByteString.Lazy (getContents)
 import Frontend.Lexer (SpannedToken (..), Token (..), alexMonadScan, runAlex)
 
 scanMany :: LByteString -> Either String [SpannedToken]
@@ -12,4 +13,4 @@ scanMany input = runAlex input go
         else (st :) <$> go
 
 main :: IO ()
-main = print . scanMany . encodeUtf8 =<< getLine
+main = print . scanMany =<< getContents
